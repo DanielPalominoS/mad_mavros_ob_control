@@ -1,0 +1,2 @@
+geometry_msgs/Point local_waypoint
+float32 heading

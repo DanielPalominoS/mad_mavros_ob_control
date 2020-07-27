@@ -1,0 +1,5 @@
+float32 thr_xy
+float32 thr_z
+float32 thr_yaw
+---
+bool success

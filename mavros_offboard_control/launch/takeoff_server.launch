@@ -1,0 +1,16 @@
+<launch>
+  <arg name="TakeoffServerTopic" default="offboard_controller/takeoff_server/check_takeoff"/>
+  <arg name="LocalPoseSubTopic" default="mavros/local_position/pose"/>
+  <arg name="GpsSubTopic" default="mavros/global_position/global"/>
+  <arg name="DistanceThreshold" default="1.0"/>
+  <arg name="publish_frequency" default="20.0"/>
+
+  <node name="takeoff_server" pkg="mavros_offboard_control" type="ob_takeoff_server" clear_params="true" output="screen">
+    <param name="TakeoffServerTopic" value="$(arg TakeoffServerTopic)" />
+    <param name="LocalPoseSubTopic" value="$(arg LocalPoseSubTopic)" />
+    <param name="GpsSubTopic" value="$(arg GpsSubTopic)" />
+    <param name="DistanceThreshold" value="$(arg DistanceThreshold)" />
+    <param name="publish_frequency" value="$(arg publish_frequency)" />
+  </node>
+
+</launch>

@@ -1,0 +1,4 @@
+
+---
+mavros_offboard_msgs/LocalWaypointList local_wp_list
+bool    success
