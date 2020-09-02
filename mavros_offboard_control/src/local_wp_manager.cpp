@@ -140,6 +140,12 @@ double waypoint_manager_server::compute_realtive_rotation(geometry_msgs::Quatern
   *rel_attitude = tf2::toMsg(qr);
   return yaw;
 }
+
+
+bool waypoint_manager_server::parse_file(std::string fila_name,mavros_offboard_msgs::LocalWaypointList* list){
+  
+}
+
 /*************
  * Callback for the service in charge of setting the thresholds
  *

@@ -1,6 +1,9 @@
 #ifndef LOCAL_WP_MANAGER_SERVER_H
 #define LOCAL_WP_MANAGER_SERVER_H
 
+#include <iostream>
+#include <fstream>
+
 #include <ros/ros.h>
 
 #include <tf/tf.h>
@@ -129,6 +132,8 @@ public:
   void publish_wp_info();
 
   void upload_default_list();
+
+  bool parse_file(std::string fila_name,mavros_offboard_msgs::LocalWaypointList* list);
 
   void run();
 };
