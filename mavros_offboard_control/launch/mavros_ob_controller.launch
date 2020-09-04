@@ -1,7 +1,11 @@
 <launch>
-  <arg name="takeoff_height" default="0.4" />
-	<node name="wp_mgr_server" pkg="mavros_offboard_control" type="local_wp_manager_server" clear_params="false" output="screen">
-		<!--param name="takeoff_height" value="$(arg takeoff_height)" /-->    
+	
+	<arg name="takeoff_height" default="0.4" />
+	<arg name="wp_file" default="$(env HOME)/wayp_file/test3 (espiral).wp" />
+	<!--param name="wp_file" value="$(arg wp_file)" /-->
+	<node name="wp_mgr_server" pkg="mavros_offboard_control" type="local_wp_manager_server" clear_params="true" output="screen">
+		<param name="wp_file" value="$(arg wp_file)" />
+		    
 	</node>
 	<node name="sp_server" pkg="mavros_offboard_control" type="sp_server" clear_params="false" output="screen">
     		<param name="takeoff_height" value="$(arg takeoff_height)" />    

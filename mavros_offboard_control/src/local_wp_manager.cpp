@@ -5,6 +5,9 @@
 waypoint_manager_server::waypoint_manager_server() : rate_(dflt_rate)
 {
   ros::NodeHandle pnh("~");
+  std::string wp_fl_nm;
+  pnh.param("wp_file", wp_fl_nm, dflt_wp_file);
+
   // subscribers
   local_pose_subscriber_ = nh_.subscribe<geometry_msgs::PoseStamped>(
       dflt_local_pose_sub_tp, 5, boost::bind(&waypoint_manager_server::local_pose_cb, this, _1));
@@ -27,8 +30,9 @@ waypoint_manager_server::waypoint_manager_server() : rate_(dflt_rate)
       nh_.advertiseService(dflt_get_wp_list_srv_tp, &waypoint_manager_server::get_wp_list_srv_cb, this);
   // variables
 
-  distance_threshold_xy_ = 0.02;
-  distance_threshold_z_ = 2.0 * distance_threshold_xy_;
+  distance_threshold_xy_ = 0.05;
+  //distance_threshold_z_ = 2.0 * distance_threshold_xy_;
+  distance_threshold_z_ = 0.025;
   yaw_threshold_ = 5.0 * M_PI / 180.0;
 
   prev_local_alt_ = 0;
@@ -68,16 +72,17 @@ waypoint_manager_server::waypoint_manager_server() : rate_(dflt_rate)
   lwp.local_waypoint.z = 0.5;
   wp_list_.current_seq = 0;
   wp_list_.local_waypoints.push_back(lwp);*/
-  this->upload_default_list();
+  this->upload_default_list(wp_fl_nm);
 
   local_wp_reached_ = false;
   curr_wp_info_.reached = false;
   curr_wp_info_.total_wp = 0;
   curr_wp_info_.wp_index = 0;
   curr_wp_info_.current_wp.heading = goal_yaw_;
-  curr_wp_info_.current_wp.local_waypoint.x = 2.0 * distance_threshold_xy_;
+  curr_wp_info_.current_wp.local_waypoint.x  = 2.0 * distance_threshold_xy_;
   curr_wp_info_.current_wp.local_waypoint.y = 2.0 * distance_threshold_xy_;
   curr_wp_info_.current_wp.local_waypoint.z = 2.0 * distance_threshold_z_;
+  std::cout << "wp file: " << wp_fl_nm << std::endl; 
 }
 
 /*************
@@ -142,8 +147,14 @@ double waypoint_manager_server::compute_realtive_rotation(geometry_msgs::Quatern
 }
 
 
-bool waypoint_manager_server::parse_file(std::string fila_name,mavros_offboard_msgs::LocalWaypointList* list){
-  
+bool waypoint_manager_server::parse_file(std::string file_name,mavros_offboard_msgs::LocalWaypointList* list){
+  std::ifstream f(file_name);
+  std::string aux_str;
+  while(std::getline(f,aux_str)){
+    mavros_offboard_msgs::LocalWaypoint p;
+    std::sscanf(aux_str.c_str(), "%lf,%lf,%lf,%f", &p.local_waypoint.x, &p.local_waypoint.y, &p.local_waypoint.z, &p.heading);
+    list->local_waypoints.push_back(p);
+  }
 }
 
 /*************
@@ -236,10 +247,11 @@ bool waypoint_manager_server::get_wp_list_srv_cb(mavros_offboard_msgs::GetWaypoi
   return success;
 }
 
-void waypoint_manager_server::upload_default_list()
+void waypoint_manager_server::upload_default_list(std::string file_name)
 {
   mavros_offboard_msgs::LocalWaypoint lwp;
-  wp_list_.current_seq = 0;
+  this->parse_file(file_name, &wp_list_);
+  /*wp_list_.current_seq = 0;
   lwp.heading = 1*M_PI_2;
   lwp.local_waypoint.x = 0;
   lwp.local_waypoint.y = 0;
@@ -274,8 +286,11 @@ void waypoint_manager_server::upload_default_list()
   lwp.local_waypoint.x = 0;
   lwp.local_waypoint.y = 0;
   lwp.local_waypoint.z = 0;
-  wp_list_.local_waypoints.push_back(lwp);
-  
+  wp_list_.local_waypoints.push_back(lwp);*/
+
+
+
+
   /*lwp.heading = 3 * M_PI_2;
   lwp.local_waypoint.x = 0.75;
   lwp.local_waypoint.y = -1;
@@ -299,7 +314,9 @@ void waypoint_manager_server::upload_default_list()
   lwp.local_waypoint.y = 0;
   lwp.local_waypoint.z = 0.4;
   wp_list_.local_waypoints.push_back(lwp);*/
-
+#ifdef DEBUG
+  std::cout << "Number of wp: " << wp_list_.local_waypoints.size()<<std::endl;
+#endif
 }
 
 void waypoint_manager_server::publish_wp_info()

@@ -55,6 +55,7 @@ static const std::string dflt_modify_wp_list_srv_tp = "wp_manager/modify_wp_list
 static const std::string dflt_get_wp_list_srv_tp = "wp_manager/get_waypoint_list";
 static const std::string dflt_move_to_next_wp_srv_tp = "wp_manager/move_to_next_waypoint";
 static const std::string dflt_set_thr_srv_tp = "wp_manager/set_threshold";
+static const std::string dflt_wp_file = std::string(std::getenv("HOME"))+"/wayp_file/test3 (M).wp";
 
 static constexpr double dflt_distance_threshold = 1.0;
 static constexpr double dflt_rate = 20.0; 
@@ -131,9 +132,9 @@ public:
 
   void publish_wp_info();
 
-  void upload_default_list();
+  void upload_default_list(std::string file_name);
 
-  bool parse_file(std::string fila_name,mavros_offboard_msgs::LocalWaypointList* list);
+  bool parse_file(std::string file_name,mavros_offboard_msgs::LocalWaypointList* list);
 
   void run();
 };

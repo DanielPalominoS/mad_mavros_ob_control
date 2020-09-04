@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   mavros_offboard_msgs
+  mad_msgs
 )
 find_package (GeographicLib 1.34 REQUIRED)
 ## System dependencies are found with CMake's conventions

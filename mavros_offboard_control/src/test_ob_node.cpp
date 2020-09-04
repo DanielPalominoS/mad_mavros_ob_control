@@ -13,6 +13,8 @@
 #include <mavros_msgs/State.h>
 
 // Mavros offboard msgs (own generated)
+#include "mad_msgs/CamCmd.h"
+#include "mad_msgs/InitCapture.h"
 #include "mavros_offboard_msgs/CurrentWaypointInfo.h"
 #include "mavros_offboard_msgs/GetWaypointList.h"
 #include "mavros_offboard_msgs/LocalWaypoint.h"
@@ -29,6 +31,8 @@ static const std::string dflt_sp_srvr_tp = "sp_server/set_setpoint";
 static const std::string dflt_modify_wp_list_srv_tp = "wp_manager/modify_wp_list";
 static const std::string dflt_get_wp_list_srv_tp = "wp_manager/get_waypoint_list";
 static const std::string dflt_move_to_next_wp_srv_tp = "wp_manager/move_to_next_waypoint";
+static const std::string dflt_camm_cmd_srv_tp = "camm_command";
+static const std::string dflt_camm_init_md_srv_tp = "init_camm";
 
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg)
@@ -73,16 +77,27 @@ int main(int argc, char** argv)
   ros::ServiceClient move_to_next_wp_client_ =
       nh_.serviceClient<mavros_offboard_msgs::MoveToNextWaypoint>(dflt_move_to_next_wp_srv_tp);
 
+  ros::ServiceClient camm_cmd_client_ = nh_.serviceClient<mad_msgs::CamCmd>(dflt_camm_cmd_srv_tp);
+  ros::ServiceClient camm_init_md_client_ = nh_.serviceClient<mad_msgs::InitCapture>(dflt_camm_init_md_srv_tp);
+
   ros::Rate rate(40.0);
 
   mavros_offboard_msgs::SetLocalSetpoint set_sp_obj;
   mavros_offboard_msgs::ModifyWaypointList modify_wp_obj;
   mavros_offboard_msgs::GetWaypointList get_wp_list_obj;
   mavros_offboard_msgs::MoveToNextWaypoint move_to_next_obj;
+  mad_msgs::CamCmd cam_cmd_obj;
+  mad_msgs::InitCapture cam_init_md_obj;
+
   mavros_offboard_msgs::LocalWaypointList lcl_wp_list;
 
   set_sp_obj.request.target_sp.type_mask = 504;
   set_sp_obj.request.target_sp.coordinate_frame = 7;
+
+  cam_init_md_obj.request.file_format = "png";
+  cam_init_md_obj.request.media_root = std::string(std::getenv("HOME")) + "/Pictures/sitl_drone_tests";
+  cam_init_md_obj.request.mode = "initPhoto";
+  cam_cmd_obj.request.description = "";
 
   while (ros::ok() && !current_state.connected)
   {
@@ -119,7 +134,10 @@ int main(int argc, char** argv)
       modify_wp_obj.request.new_wp_list = lcl_wp_list;
       wp_info.mission_completed = false;
       wp_info.wp_index = 0;
+      // Modify current wp_list
       modify_wp_list_client.call(modify_wp_obj);
+      // Initiate cam module creating a new folder for current flight plan
+      camm_init_md_client_.call(cam_init_md_obj);
 
       /*for (int i = 0; i < num_wp; i++)
       {
@@ -164,10 +182,25 @@ int main(int argc, char** argv)
           ros::spinOnce();
           rate.sleep();
         }
-        ros::Duration(1.0).sleep();
+
 #ifdef DEBUG
         ROS_INFO("waypoint reached");
 #endif
+        // Take picture
+        cam_cmd_obj.request.command = "photo:" + std::to_string(wp_info.wp_index);
+
+#ifdef DEBUG
+        std::cout << "cam_command" << cam_cmd_obj.request.command << std::endl;
+#endif
+        camm_cmd_client_.call(cam_cmd_obj);
+        if (!cam_cmd_obj.response.success)
+          break;
+#ifdef DEBUG
+        std::cout << "Picture taken" << cam_cmd_obj.request.command << std::endl;
+#endif
+        ros::Duration(2.0).sleep();
+        
+
         move_to_next_wp_client_.call(move_to_next_obj);
         if (!move_to_next_obj.response.success)
           break;
@@ -179,9 +212,9 @@ int main(int argc, char** argv)
     set_sp_obj.request.target_sp.position.x = 0;
     set_sp_obj.request.target_sp.position.y = 0;
     set_sp_obj.request.target_sp.position.z = 0;
-    set_sp_obj.request.target_sp.yaw=M_PI_2;
+    set_sp_obj.request.target_sp.yaw = M_PI_2;
     set_sp_client_.call(set_sp_obj);
-    
+
 #ifdef DEBUG
     ROS_INFO("Routine ended");
 #endif
